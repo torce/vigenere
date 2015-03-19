@@ -1,15 +1,22 @@
 package es.udc.csai
 
-import org.scalatest.{WordSpecLike, Matchers, FlatSpec}
+import org.scalatest.{Matchers, WordSpecLike}
 
 class VigenereTest extends Matchers with WordSpecLike{
-  "A Vigenere objet" should {
+  "A Vigenere object" should {
     import es.udc.csai.Language.English
     "cipher a text with the key provided" in {
-      Vigenere.cipher("ATTACKATDAWN", "LEMON") shouldBe "LXFOPVEFRNHR"
+      Vigenere.cipher("THIS IS SPARTA", "AB") shouldBe "TIIT JSASQASTB"
     }
     "decipher a text with the key provided" in {
-      Vigenere.decipher("LXFOPVEFRNHR", "LEMON") shouldBe "ATTACKATDAWN"
+      Vigenere.decipher("TIIT JSASQASTB", "AB") shouldBe "THIS IS SPARTA"
+    }
+    "cipher and decipher should be inverse" in {
+      Vigenere.decipher(Vigenere.cipher("THIS IS A TEST", "PASSWORD"), "PASSWORD") shouldBe "THIS IS A TEST"
+      Vigenere.cipher(Vigenere.decipher("THIS IS A TEST", "PASSWORD"), "PASSWORD") shouldBe "THIS IS A TEST"
+    }
+    "do not cipher characters that not belong to the language" in {
+      Vigenere.cipher(";;", "AB") shouldBe ";;"
     }
   }
 }
