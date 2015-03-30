@@ -13,9 +13,14 @@ object CaesarBreaker {
   }
 
   def decipherSnippet(text: String, snippetLength: Int, index: Int)(implicit lang: Language): (Int, String) = {
-    val mostRepeatedChar = sortFrequencies(TextUtils.charFrequencies(text)).head._1
-    val mostRepeatedCharLanguage = sortFrequencies(lang.frequencyTable)(index)._1
-    val delta = lang.value(mostRepeatedChar) - lang.value(mostRepeatedCharLanguage)
+    val mostRepeatedChar = sortFrequencies(TextUtils.charFrequencies(text)).foldLeft(-1) {
+      case (v, (c, _)) => if(lang.value(c) != -1) lang.value(c) else v
+    }
+    if(mostRepeatedChar < 0) {
+      throw new RuntimeException("None of the characters of the snippet exists in the language.")
+    }
+    val mostRepeatedCharLanguage = lang.value(sortFrequencies(lang.frequencyTable)(index)._1)
+    val delta = (((mostRepeatedChar - mostRepeatedCharLanguage) % lang.charset.length) + lang.charset.length) % lang.charset.length
     val snippet = Vigenere.decipher(text.substring(0, math.min(snippetLength, text.length)), String.valueOf(lang.character(delta)))
     (delta, snippet)
   }

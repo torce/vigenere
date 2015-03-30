@@ -3,6 +3,7 @@ package es.udc.csai
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
+import es.udc.csai.Language.{English, Custom}
 import org.rogach.scallop.LazyScallopConf
 import org.rogach.scallop.exceptions.{Help, ScallopException}
 
@@ -65,10 +66,17 @@ object Main extends App {
     val numCharsTested = opt[Int](
       name = "num-chars-tested",
       descr = "Number of characters of the language used to guess the delta of " +
-        "each snippet. By default the 5 most used characters of the language are tested.",
-      short = 'c',
+        "each snippet. By default the 16 most used characters of the language are tested.",
+      short = 'a',
       validate = _ > 0,
-      default = Some(5))
+      default = Some(16))
+
+    val charset = opt[String](
+      name = "charset",
+      short = 'x',
+      descr = "Charset used. A for uppercase characters, a for lowercase characters, " +
+        "0 for numbers and $ for symbols. All options can be used together. Default: Uppercase and spaces",
+      default = None)
 
     requireOne(file, string)
     conflicts(cipher, List(maxKeyLength, numberOfMatches, guessKeyLength, snippetLength, numCharsTested))
@@ -99,27 +107,65 @@ object Main extends App {
     (s) => println(s)
   }
 
+  val keyOutput: (String, String) => Unit =
+    (k, r) => output(s"Key: $k\nResult:\n${r.substring(0, math.min(256, r.length))}")
+
+  val lang = if(Conf.charset.isSupplied) {
+    val charsetOptions = Map(
+      'A' -> "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+      'a' -> "abcdefghijklmnopqrstuvwxyz",
+      '0' -> "0123456789",
+      '$' -> "\\ºª!|\"@·#$~%½&¬/{([)]=}?¿'¡ ")
+
+    val charset = charsetOptions.foldLeft("") {
+      case (acc, (c, a)) =>
+        if(Conf.charset().contains(c)) {
+          acc + a
+        } else {
+          acc
+        }
+    }
+    new Custom(charset, English.frequencyTable, English.commonWords)
+  } else {
+    English
+  }
 
   if (Conf.cipher.isSupplied) {
-    output(Vigenere.cipher(input, Conf.key()))
+    val text = Vigenere.cipher(input, Conf.key())(lang)
+    println(s"Coincidence index: ${TextUtils.coincidenceIndex(text)}")
+    output(text)
   }
 
   if (Conf.decipher.isSupplied) {
-    output(Vigenere.decipher(input, Conf.key()))
+    output(Vigenere.decipher(input, Conf.key())(lang))
   }
 
+
   if (Conf.break.isSupplied) {
-    val init = System.currentTimeMillis()
+
     if (Conf.guessKeyLength.isSupplied) {
-      output(VigenereBreaker.decipherPartitions(
+      val lengths = VigenereBreaker.guessLength(input, Conf.maxKeyLength())
+
+      println("Possible key lengths:")
+      lengths.foreach {
+        t =>
+          println(s"${t._1} with score: ${t._2}")
+      }
+
+      val init = System.currentTimeMillis()
+      VigenereBreaker.decipherPartitions(
         text = input,
+        lengths = lengths.map(_._1),
         matches = Conf.numberOfMatches(),
         snippetLength = Conf.snippetLength(),
         numCharsTested = Conf.numCharsTested(),
-        Conf.maxKeyLength()))
+        output = keyOutput)(lang)
+      println(s"${System.currentTimeMillis() - init} ms")
     } else {
-      output(VigenereBreaker.decipherBruteForce(input, Conf.numberOfMatches(), Conf.maxKeyLength()))
+      val init = System.currentTimeMillis()
+      VigenereBreaker.decipherBruteForce(input, Conf.numberOfMatches(), Conf.maxKeyLength(), keyOutput)(lang)
+      println(s"${System.currentTimeMillis() - init} ms")
     }
-    println(s"${System.currentTimeMillis() - init} ms")
+
   }
 }

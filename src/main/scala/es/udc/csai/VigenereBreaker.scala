@@ -26,7 +26,7 @@ object VigenereBreaker {
       }).sortWith(_._2 > _._2)
   }
 
-  def decipherBruteForce(text: String, matches: Int, maxKeyLength: Int)(implicit lang: Language): String = {
+  def decipherBruteForce(text: String, matches: Int, maxKeyLength: Int, output: (String, String) => Unit)(implicit lang: Language) {
     def generate(i: Int): StringBuilder = {
       val char = lang.charset(i % lang.charset.length)
       val n = i / lang.charset.length
@@ -40,27 +40,25 @@ object VigenereBreaker {
     var i = 0
     var key = generate(i).toString()
     while (key.length <= maxKeyLength) {
-      val tt = Vigenere.decipher(text, key)
+      val tt = Vigenere.decipher(text, key)(lang)
       if (TextUtils.findWordMatches(tt) >= matches) {
-        return tt
+        output(key, tt)
       }
       i += 1
       key = generate(i).toString()
     }
-    throw new KeyNotFoundException
   }
 
   class Combinations(length: Int, maxCipher: Int) extends Iterator[Seq[Int]] {
     var i: Int = 0
     var mi: Int = 0
     var v = Vector.fill(length)(0)
-    val max = math.pow(maxCipher + 1, length).toInt - 1
-    var current = 0
+    var first: Boolean = true
 
-    override def hasNext: Boolean = v != Vector.fill(length)(maxCipher)
+    override def hasNext: Boolean = !v.forall(_ == maxCipher)
 
     override def next(): Seq[Int] = {
-      if (current != 0) {
+      if (!first) {
         if (v.forall(_ == v.head)) {
           v = Vector.fill[Int](length)(0).updated(0, mi + 1)
           i = 0
@@ -77,37 +75,27 @@ object VigenereBreaker {
           i = 0
         }
       }
-      current += 1
+      first = false
       v
     }
   }
 
-  def decipherPartitions(text: String, matches: Int, snippetLength: Int, numCharsTested: Int, maxLength: Int = 8)(implicit lang: Language): String = {
-    var result = Seq[Int]()
-    val gl = guessLength(text, maxLength)
-    gl.forall { l =>
-      val partitions = split(text, l._1)
-      new Combinations(l._1, numCharsTested).forall { c: Seq[Int] =>
+  def decipherPartitions(text: String, matches: Int, lengths: Seq[Int], snippetLength: Int, numCharsTested: Int, output: (String, String) => Unit)(implicit lang: Language) {
+    lengths.foreach { l =>
+      val partitions = split(text, l)
+      new Combinations(l, numCharsTested).foreach { c: Seq[Int] =>
         val combinationResults = (partitions zip c).map {
           case t =>
-            if (t._2 > numCharsTested) {
-              println(c)
-            }
             CaesarBreaker.decipherSnippet(t._1, snippetLength, t._2)
-
         }
-
         val (key, decipheredPartitions) = combinationResults.unzip
         val decipheredText = join(decipheredPartitions, text.length)
-        if (TextUtils.findWordMatches(decipheredText) < matches) {
-          true
-        } else {
-          result = key
-          false
+        if (TextUtils.findWordMatches(decipheredText) >= matches) {
+          println(c)
+          output(TextUtils.decode(key), Vigenere.decipher(text, TextUtils.decode(key))(lang))
         }
       }
     }
-    Vigenere.decipher(text, TextUtils.decode(result))
   }
 
   private def split(text: String, partitions: Int): Seq[String] = {
