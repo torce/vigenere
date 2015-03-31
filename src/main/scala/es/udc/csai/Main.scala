@@ -107,8 +107,9 @@ object Main extends App {
     (s) => println(s)
   }
 
-  val keyOutput: (String, String) => Unit =
-    (k, r) => output(s"Key: $k\nResult:\n${r.substring(0, math.min(256, r.length))}")
+  val keyOutput: (Long) => (String, String) => Unit =
+    (init) => (key, result) =>
+      output(s"Timestamp: ${System.currentTimeMillis() - init}s\nKey: $key\nResult:\n${result.substring(0, math.min(256, result.length))}")
 
   val lang = if(Conf.charset.isSupplied) {
     val charsetOptions = Map(
@@ -159,11 +160,11 @@ object Main extends App {
         matches = Conf.numberOfMatches(),
         snippetLength = Conf.snippetLength(),
         numCharsTested = Conf.numCharsTested.get.getOrElse(lang.charset.length - 1),
-        output = keyOutput)(lang)
+        output = keyOutput(init))(lang)
       println(s"${System.currentTimeMillis() - init} ms")
     } else {
       val init = System.currentTimeMillis()
-      VigenereBreaker.decipherBruteForce(input, Conf.numberOfMatches(), Conf.maxKeyLength(), keyOutput)(lang)
+      VigenereBreaker.decipherBruteForce(input, Conf.numberOfMatches(), Conf.maxKeyLength(), keyOutput(init))(lang)
       println(s"${System.currentTimeMillis() - init} ms")
     }
 

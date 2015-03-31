@@ -2,7 +2,20 @@ package es.udc.csai
 
 object VigenereBreaker {
 
-  case class KeyNotFoundException() extends Exception
+  case class TextPartition(text: String, snippetLength: Int)(implicit lang: Language) {
+    //Get the most repeated character in the text that belongs to the language
+    val mostRepeatedChar: Int = {
+      lang.value(TextUtils.sortedCharFrequencies(text).find(t => lang.value(t._1) > 0).get._1)
+    }
+    val snippet: String = text.substring(0, math.min(snippetLength, text.length))
+
+    def decipherSnippet(index: Int): (Int, String) = {
+      def mod(a: Int, b: Int) = (a % b + b) % b // Real modulo operator
+      val delta = mod(mostRepeatedChar - lang.value(lang.commonCharacters(index)._1), lang.charset.length)
+      val decipheredSnippet = Vigenere.decipher(snippet, String.valueOf(lang.character(delta)))
+      (delta, decipheredSnippet)
+    }
+  }
 
   def guessLength(text: String, maxLength: Int): Seq[(Int, Int)] = {
 
@@ -82,11 +95,10 @@ object VigenereBreaker {
 
   def decipherPartitions(text: String, matches: Int, lengths: Seq[Int], snippetLength: Int, numCharsTested: Int, output: (String, String) => Unit)(implicit lang: Language) {
     lengths.foreach { l =>
-      val partitions = split(text, l)
+      val partitions = split(text, l).map(new TextPartition(_, snippetLength)(lang))
       new Combinations(l, numCharsTested).foreach { c: Seq[Int] =>
         val combinationResults = (partitions zip c).map {
-          case t =>
-            CaesarBreaker.decipherSnippet(t._1, snippetLength, t._2)
+          case (partition, index) => partition.decipherSnippet(index)
         }
         val (key, decipheredPartitions) = combinationResults.unzip
         val decipheredText = join(decipheredPartitions, text.length)

@@ -14,6 +14,10 @@ object TextUtils {
     countTable(text).map (t => (t._1, t._2 / text.length.toDouble))
   }
 
+  def sortedCharFrequencies(text: String): Seq[(Char, Double)] = {
+    charFrequencies(text).map(identity)(collection.breakOut).sortWith(_._2 > _._2)
+  }
+
   def wordCountTable(text: String, separator: Char = ' '): Map[String, Int] = {
     text.split(separator).foldLeft(Map.empty[String, Int]) {
       case (map, word) => map + (word.toUpperCase -> (map.getOrElse(word, 0) + 1))
