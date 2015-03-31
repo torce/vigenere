@@ -13,7 +13,7 @@ class VigenereBreakerTest extends Matchers with WordSpecLike {
     "Test all the keys " in {
       val text = "BE WATER AND THAT OF THE END ALSO THAT I THIS BE SAND THE OF LAND ME I JUST KEEP THIS THAT STORM CIPHER KEY BE HAVE"
       val init = System.currentTimeMillis()
-      VigenereBreaker.decipherBruteForce(Vigenere.cipher(text, "ZY"), 8, 4, (k, v) => v shouldBe text)
+      VigenereBreaker.decipherBruteForce(Vigenere.cipher(text, "ZY"), 8, 4, 512, (k, v) => v shouldBe text)
       println(s"Brute force time: ${System.currentTimeMillis() - init} ms")
     }
     "Decipher the text using text analysis" in {

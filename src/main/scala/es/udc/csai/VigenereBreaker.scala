@@ -7,7 +7,7 @@ object VigenereBreaker {
     val mostRepeatedChar: Int = {
       lang.value(TextUtils.sortedCharFrequencies(text).find(t => lang.value(t._1) > 0).get._1)
     }
-    val snippet: String = text.substring(0, math.min(snippetLength, text.length))
+    val snippet: String = text.substring(0, math.min(snippetLength, text.length - 1))
 
     def decipherSnippet(index: Int): (Int, String) = {
       def mod(a: Int, b: Int) = (a % b + b) % b // Real modulo operator
@@ -39,7 +39,7 @@ object VigenereBreaker {
       }).sortWith(_._2 > _._2)
   }
 
-  def decipherBruteForce(text: String, matches: Int, maxKeyLength: Int, output: (String, String) => Unit)(implicit lang: Language) {
+  def decipherBruteForce(text: String, matches: Int, maxKeyLength: Int, snippetLength: Int, output: (String, String) => Unit)(implicit lang: Language) {
     def generate(i: Int): StringBuilder = {
       val char = lang.charset(i % lang.charset.length)
       val n = i / lang.charset.length
@@ -51,9 +51,10 @@ object VigenereBreaker {
     }
 
     var i = 0
+    val snippet = text.substring(0, math.min(snippetLength, text.length - 1))
     var key = generate(i).toString()
     while (key.length <= maxKeyLength) {
-      val tt = Vigenere.decipher(text, key)(lang)
+      val tt = Vigenere.decipher(snippet, key)(lang)
       if (TextUtils.findWordMatches(tt) >= matches) {
         output(key, tt)
       }

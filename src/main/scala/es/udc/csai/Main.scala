@@ -1,6 +1,6 @@
 package es.udc.csai
 
-import java.io.FileWriter
+import java.io.{FileWriter, PrintWriter}
 
 import es.udc.csai.Language.{Custom, English}
 import org.rogach.scallop.LazyScallopConf
@@ -101,6 +101,9 @@ object Main extends App {
   }
   var fileOutput: Option[FileWriter] = None
   val output: (String) => Unit = if (Conf.output.isDefined) {
+    val eraser = new PrintWriter(Conf.output()) //Clear the output file
+    eraser.write("")
+    eraser.close()
     fileOutput = Some(new FileWriter(Conf.output(), true))
     (s) => fileOutput.get.write(s)
   } else {
@@ -164,12 +167,17 @@ object Main extends App {
       println(s"${System.currentTimeMillis() - init} ms")
     } else {
       val init = System.currentTimeMillis()
-      VigenereBreaker.decipherBruteForce(input, Conf.numberOfMatches(), Conf.maxKeyLength(), keyOutput(init))(lang)
+      VigenereBreaker.decipherBruteForce(
+        text = input,
+        matches = Conf.numberOfMatches(),
+        maxKeyLength = Conf.maxKeyLength(),
+        snippetLength = Conf.snippetLength(),
+        output = keyOutput(init))(lang)
       println(s"${System.currentTimeMillis() - init} ms")
     }
 
     //Close file
-    if (Conf.file.isSupplied) {
+    if (Conf.output.isSupplied) {
       fileOutput.get.close()
     }
   }
