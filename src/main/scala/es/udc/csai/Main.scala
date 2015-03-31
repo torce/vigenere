@@ -1,7 +1,6 @@
 package es.udc.csai
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
+import java.io.FileWriter
 
 import es.udc.csai.Language.{Custom, English}
 import org.rogach.scallop.LazyScallopConf
@@ -58,10 +57,10 @@ object Main extends App {
 
     val snippetLength = opt[Int](
       name = "snippet-length",
-      descr = "Length of the snippets evaluated. By default 64 characters.",
+      descr = "Length of the snippets evaluated.",
       short = 'n',
       validate = _ > 0,
-      default = Some(64))
+      default = Some(512))
 
     val numCharsTested = opt[Int](
       name = "num-chars-tested",
@@ -100,16 +99,17 @@ object Main extends App {
   } else {
     io.Source.fromFile(Conf.file()).mkString
   }
-
+  var fileOutput: Option[FileWriter] = None
   val output: (String) => Unit = if (Conf.output.isDefined) {
-    (s) => Files.write(Paths.get(Conf.output()), s.getBytes(StandardCharsets.UTF_8))
+    fileOutput = Some(new FileWriter(Conf.output(), true))
+    (s) => fileOutput.get.write(s)
   } else {
     (s) => println(s)
   }
 
   val keyOutput: (Long) => (String, String) => Unit =
     (init) => (key, result) =>
-      output(s"Timestamp: ${System.currentTimeMillis() - init}s\nKey: $key\nResult:\n${result.substring(0, math.min(256, result.length))}")
+      output(s"Timestamp: ${System.currentTimeMillis() - init}ms\nKey: $key\nResult:\n${result.substring(0, math.min(256, result.length))}")
 
   val lang = if(Conf.charset.isSupplied) {
     val charsetOptions = Map(
@@ -168,5 +168,9 @@ object Main extends App {
       println(s"${System.currentTimeMillis() - init} ms")
     }
 
+    //Close file
+    if (Conf.file.isSupplied) {
+      fileOutput.get.close()
+    }
   }
 }
