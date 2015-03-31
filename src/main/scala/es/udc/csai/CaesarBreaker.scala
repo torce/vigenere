@@ -19,8 +19,9 @@ object CaesarBreaker {
     if(mostRepeatedChar < 0) {
       throw new RuntimeException("None of the characters of the snippet exists in the language.")
     }
-    val mostRepeatedCharLanguage = lang.value(sortFrequencies(lang.frequencyTable)(index)._1)
-    val delta = (((mostRepeatedChar - mostRepeatedCharLanguage) % lang.charset.length) + lang.charset.length) % lang.charset.length
+    val mostRepeatedCharLanguage = sortFrequencies(lang.frequencyTable)
+    val mrcl = lang.value(mostRepeatedCharLanguage(index)._1)
+    val delta = (((mostRepeatedChar - mrcl) % lang.charset.length) + lang.charset.length) % lang.charset.length
     val snippet = Vigenere.decipher(text.substring(0, math.min(snippetLength, text.length)), String.valueOf(lang.character(delta)))
     (delta, snippet)
   }

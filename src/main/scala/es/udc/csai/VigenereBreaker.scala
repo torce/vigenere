@@ -91,7 +91,6 @@ object VigenereBreaker {
         val (key, decipheredPartitions) = combinationResults.unzip
         val decipheredText = join(decipheredPartitions, text.length)
         if (TextUtils.findWordMatches(decipheredText) >= matches) {
-          println(c)
           output(TextUtils.decode(key), Vigenere.decipher(text, TextUtils.decode(key))(lang))
         }
       }

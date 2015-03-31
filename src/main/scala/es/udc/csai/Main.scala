@@ -3,7 +3,7 @@ package es.udc.csai
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
-import es.udc.csai.Language.{English, Custom}
+import es.udc.csai.Language.{Custom, English}
 import org.rogach.scallop.LazyScallopConf
 import org.rogach.scallop.exceptions.{Help, ScallopException}
 
@@ -66,10 +66,9 @@ object Main extends App {
     val numCharsTested = opt[Int](
       name = "num-chars-tested",
       descr = "Number of characters of the language used to guess the delta of " +
-        "each snippet. By default the 16 most used characters of the language are tested.",
+        "each snippet. By default all the characters of the language are tested.",
       short = 'a',
-      validate = _ > 0,
-      default = Some(16))
+      validate = _ > 0)
 
     val charset = opt[String](
       name = "charset",
@@ -78,6 +77,7 @@ object Main extends App {
         "0 for numbers and $ for symbols. All options can be used together. Default: Uppercase and spaces",
       default = None)
 
+    requireOne(cipher, decipher, break)
     requireOne(file, string)
     conflicts(cipher, List(maxKeyLength, numberOfMatches, guessKeyLength, snippetLength, numCharsTested))
     conflicts(decipher, List(maxKeyLength, numberOfMatches, guessKeyLength, snippetLength, numCharsTested))
@@ -125,7 +125,7 @@ object Main extends App {
           acc
         }
     }
-    new Custom(charset, English.frequencyTable, English.commonWords)
+    new Custom(charset, English.frequencyTable.filter(t => charset.contains(t._1)), English.commonWords)
   } else {
     English
   }
@@ -158,7 +158,7 @@ object Main extends App {
         lengths = lengths.map(_._1),
         matches = Conf.numberOfMatches(),
         snippetLength = Conf.snippetLength(),
-        numCharsTested = Conf.numCharsTested(),
+        numCharsTested = Conf.numCharsTested.get.getOrElse(lang.charset.length - 1),
         output = keyOutput)(lang)
       println(s"${System.currentTimeMillis() - init} ms")
     } else {
