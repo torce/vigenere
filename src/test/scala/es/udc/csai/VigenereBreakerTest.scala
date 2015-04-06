@@ -29,5 +29,18 @@ class VigenereBreakerTest extends Matchers with WordSpecLike {
         output = (k, v) => v shouldBe text)
       println(s"Key guessing time: ${System.currentTimeMillis() - init} ms")
     }
+    "Have a length less or equal to the snippet length supplied" in {
+      val text = "BE WATER AND THAT OF THE END ALSO THAT I THIS BE SAND THE OF LAND ME I JUST KEEP THIS THAT STORM CIPHER KEY BE HAVE"
+      val init = System.currentTimeMillis()
+      val ec = Vigenere.cipher(text, "ZYXV")
+      VigenereBreaker.decipherPartitions(
+        text = ec,
+        lengths = VigenereBreaker.guessLength(text, 4).map(_._1),
+        matches = 4,
+        snippetLength = 16,
+        numCharsTested = 8,
+        output = (k, v) => v.length should be <= 16)
+      println(s"Key guessing time: ${System.currentTimeMillis() - init} ms")
+    }
   }
 }

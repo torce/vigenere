@@ -96,7 +96,7 @@ object VigenereBreaker {
 
   def decipherPartitions(text: String, matches: Int, lengths: Seq[Int], snippetLength: Int, numCharsTested: Int, output: (String, String) => Unit)(implicit lang: Language) {
     lengths.foreach { l =>
-      val partitions = split(text, l).map(new TextPartition(_, snippetLength)(lang))
+      val partitions = split(text, l).map(new TextPartition(_, snippetLength / l)(lang))
       new Combinations(l, numCharsTested).foreach { c: Seq[Int] =>
         val combinationResults = (partitions zip c).map {
           case (partition, index) => partition.decipherSnippet(index)
