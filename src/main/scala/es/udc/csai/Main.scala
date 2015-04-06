@@ -148,9 +148,10 @@ object Main extends App {
   if (Conf.break.isSupplied) {
 
     if (Conf.guessKeyLength.isSupplied) {
+      val initKeyGuess = System.currentTimeMillis()
       val lengths = VigenereBreaker.guessLength(input, Conf.maxKeyLength())
-
-      println("Possible key lengths:")
+      val endKeyGuess = System.currentTimeMillis() - initKeyGuess;
+      println(s"[${endKeyGuess}ms] Possible key lengths:")
       lengths.foreach {
         t =>
           println(s"${t._1} with score: ${t._2}")
