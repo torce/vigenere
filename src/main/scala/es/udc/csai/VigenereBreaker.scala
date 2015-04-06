@@ -51,7 +51,7 @@ object VigenereBreaker {
     }
 
     var i = 0
-    val snippet = text.substring(0, math.min(snippetLength, text.length - 1))
+    val snippet = text.substring(0, math.min(snippetLength, text.length))
     var key = generate(i).toString()
     while (key.length <= maxKeyLength) {
       val tt = Vigenere.decipher(snippet, key)(lang)
